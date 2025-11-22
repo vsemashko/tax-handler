@@ -3,6 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { HealthModule } from './modules/health/health.module';
+import { CounterpartyModule } from './modules/counterparty/counterparty.module';
+import { TransactionModule } from './modules/transaction/transaction.module';
+import { WhiteListModule } from './modules/white-list/white-list.module';
 
 @Module({
   imports: [
@@ -34,6 +37,9 @@ import { HealthModule } from './modules/health/health.module';
     // Feature modules
     CurrencyModule,
     HealthModule,
+    CounterpartyModule,
+    TransactionModule,
+    WhiteListModule,
   ],
 })
 export class AppModule {}
