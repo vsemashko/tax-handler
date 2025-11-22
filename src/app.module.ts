@@ -6,6 +6,7 @@ import { HealthModule } from './modules/health/health.module';
 import { CounterpartyModule } from './modules/counterparty/counterparty.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
 import { WhiteListModule } from './modules/white-list/white-list.module';
+import { ReportingModule } from './modules/reporting/reporting.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { WhiteListModule } from './modules/white-list/white-list.module';
     CounterpartyModule,
     TransactionModule,
     WhiteListModule,
+    ReportingModule,
   ],
 })
 export class AppModule {}
