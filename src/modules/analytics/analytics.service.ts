@@ -129,16 +129,25 @@ export class AnalyticsService {
     this.logger.log(`Getting tax summary for ${year}${month ? `-${month}` : ''}`);
 
     let period = `${year}`;
-    let vatWhere: any = { year };
+
+    // Build date range for VAT reports based on reportingPeriod
+    let startDate: Date;
+    let endDate: Date;
 
     if (month) {
       period = `${year}-${month.toString().padStart(2, '0')}`;
-      vatWhere = { year, month };
+      startDate = new Date(year, month - 1, 1);
+      endDate = new Date(year, month, 0);
+    } else {
+      startDate = new Date(year, 0, 1);
+      endDate = new Date(year, 11, 31);
     }
 
-    // Get VAT reports
+    // Get VAT reports by reportingPeriod
     const vatReports = await this.vatReportRepository.find({
-      where: vatWhere,
+      where: {
+        reportingPeriod: Between(startDate, endDate),
+      },
     });
 
     let vatCollected = 0;
@@ -146,9 +155,9 @@ export class AnalyticsService {
     let vatDue = 0;
 
     for (const report of vatReports) {
-      vatCollected += Number(report.outputVat || 0);
-      vatPaid += Number(report.inputVat || 0);
-      vatDue += Number(report.vatDue || 0);
+      vatCollected += Number(report.totalSalesVat || 0);
+      vatPaid += Number(report.totalPurchasesVat || 0);
+      vatDue += Number(report.vatPayable || 0);
     }
 
     // Get CIT data for the year
@@ -205,10 +214,14 @@ export class AnalyticsService {
       }
 
       // Get VAT due for the month
+      const monthStart = new Date(year, month - 1, 1);
+      const monthEnd = new Date(year, month, 0);
       const vatReport = await this.vatReportRepository.findOne({
-        where: { year, month },
+        where: {
+          reportingPeriod: Between(monthStart, monthEnd),
+        },
       });
-      const vatDue = vatReport ? Number(vatReport.vatDue || 0) : 0;
+      const vatDue = vatReport ? Number(vatReport.vatPayable || 0) : 0;
 
       trends.push({
         month: `${year}-${month.toString().padStart(2, '0')}`,
@@ -325,7 +338,7 @@ export class AnalyticsService {
       .map(data => ({
         id: data.counterparty.id,
         name: data.counterparty.name,
-        nip: data.counterparty.nip,
+        nip: data.counterparty.nip || '',
         totalTransactionValue: Number(data.total.toFixed(2)),
         transactionCount: data.count,
         type: data.type,
@@ -348,20 +361,23 @@ export class AnalyticsService {
     // Get VAT reports that need to be submitted
     const vatReports = await this.vatReportRepository.find({
       where: { status: 'finalized' },
-      order: { year: 'DESC', month: 'DESC' },
+      order: { reportingPeriod: 'DESC' },
       take: 6,
     });
 
     for (const report of vatReports) {
       // VAT is due by 25th of the following month
-      const dueDate = new Date(report.year, report.month, 25);
+      const reportDate = new Date(report.reportingPeriod);
+      const year = reportDate.getFullYear();
+      const month = reportDate.getMonth();
+      const dueDate = new Date(year, month + 1, 25);
       const status = dueDate < now ? 'overdue' : 'upcoming';
 
       obligations.push({
         type: 'vat',
         dueDate: dueDate.toISOString().split('T')[0],
-        amount: Number(report.vatDue),
-        description: `VAT payment for ${report.year}-${report.month.toString().padStart(2, '0')}`,
+        amount: Number(report.vatPayable),
+        description: `VAT payment for ${year}-${(month + 1).toString().padStart(2, '0')}`,
         status,
       });
     }

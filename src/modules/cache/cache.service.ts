@@ -1,28 +1,41 @@
-import { Injectable, Inject, CACHE_MANAGER, Logger } from '@nestjs/common';
-import { Cache } from 'cache-manager';
+import { Injectable, Logger } from '@nestjs/common';
 
 export interface CacheOptions {
   ttl?: number; // Time to live in seconds
 }
 
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
 @Injectable()
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
-
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  private cache: Map<string, CacheEntry<any>> = new Map();
+  private readonly defaultTTL = 3600; // 1 hour in seconds
 
   /**
    * Get a value from cache
    */
   async get<T>(key: string): Promise<T | undefined> {
     try {
-      const value = await this.cacheManager.get<T>(key);
-      if (value) {
-        this.logger.debug(`Cache HIT for key: ${key}`);
-      } else {
+      const entry = this.cache.get(key);
+
+      if (!entry) {
         this.logger.debug(`Cache MISS for key: ${key}`);
+        return undefined;
       }
-      return value;
+
+      // Check if expired
+      if (Date.now() > entry.expiresAt) {
+        this.cache.delete(key);
+        this.logger.debug(`Cache MISS (expired) for key: ${key}`);
+        return undefined;
+      }
+
+      this.logger.debug(`Cache HIT for key: ${key}`);
+      return entry.value as T;
     } catch (error) {
       this.logger.error(`Cache GET error for key ${key}:`, error.message);
       return undefined;
@@ -34,8 +47,11 @@ export class CacheService {
    */
   async set<T>(key: string, value: T, options?: CacheOptions): Promise<void> {
     try {
-      await this.cacheManager.set(key, value, options?.ttl);
-      this.logger.debug(`Cache SET for key: ${key}, TTL: ${options?.ttl || 'default'}`);
+      const ttl = (options?.ttl || this.defaultTTL) * 1000; // Convert to milliseconds
+      const expiresAt = Date.now() + ttl;
+
+      this.cache.set(key, { value, expiresAt });
+      this.logger.debug(`Cache SET for key: ${key}, TTL: ${options?.ttl || this.defaultTTL}s`);
     } catch (error) {
       this.logger.error(`Cache SET error for key ${key}:`, error.message);
     }
@@ -46,7 +62,7 @@ export class CacheService {
    */
   async del(key: string): Promise<void> {
     try {
-      await this.cacheManager.del(key);
+      this.cache.delete(key);
       this.logger.debug(`Cache DEL for key: ${key}`);
     } catch (error) {
       this.logger.error(`Cache DEL error for key ${key}:`, error.message);
@@ -58,10 +74,14 @@ export class CacheService {
    */
   async delPattern(pattern: string): Promise<void> {
     try {
-      // This is a simplified implementation
-      // In production, you might want to use Redis SCAN for large datasets
-      this.logger.debug(`Cache DEL pattern: ${pattern}`);
-      // Implementation depends on cache-manager-redis-store version
+      const regex = new RegExp(pattern);
+      const keysToDelete = Array.from(this.cache.keys()).filter(key => regex.test(key));
+
+      for (const key of keysToDelete) {
+        this.cache.delete(key);
+      }
+
+      this.logger.debug(`Cache DEL pattern: ${pattern}, deleted ${keysToDelete.length} keys`);
     } catch (error) {
       this.logger.error(`Cache DEL pattern error for ${pattern}:`, error.message);
     }
@@ -72,7 +92,7 @@ export class CacheService {
    */
   async reset(): Promise<void> {
     try {
-      await this.cacheManager.reset();
+      this.cache.clear();
       this.logger.log('Cache RESET - all keys cleared');
     } catch (error) {
       this.logger.error('Cache RESET error:', error.message);
@@ -143,7 +163,33 @@ export class CacheService {
    * Invalidate analytics caches
    */
   async invalidateAnalytics(): Promise<void> {
-    // In production, you would use pattern matching to delete analytics:* keys
+    await this.delPattern('^analytics:');
     this.logger.log('Invalidated analytics cache');
+  }
+
+  /**
+   * Get cache size (for monitoring)
+   */
+  getSize(): number {
+    return this.cache.size;
+  }
+
+  /**
+   * Clean up expired entries
+   */
+  async cleanup(): Promise<void> {
+    const now = Date.now();
+    let cleaned = 0;
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expiresAt) {
+        this.cache.delete(key);
+        cleaned++;
+      }
+    }
+
+    if (cleaned > 0) {
+      this.logger.log(`Cache cleanup: removed ${cleaned} expired entries`);
+    }
   }
 }

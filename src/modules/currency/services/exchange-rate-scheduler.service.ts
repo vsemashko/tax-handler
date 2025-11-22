@@ -31,8 +31,8 @@ export class ExchangeRateSchedulerService {
 
       for (const currency of currencies) {
         try {
-          const rate = await this.exchangeRateService.getExchangeRate(currency, today);
-          this.logger.log(`Updated ${currency}: ${rate}`);
+          const rate = await this.exchangeRateService.getCurrentRate(currency, 'A');
+          this.logger.log(`Updated ${currency}: ${Number(rate.midRate)}`);
           successCount++;
         } catch (error) {
           this.logger.warn(`Failed to update ${currency}: ${error.message}`);
@@ -92,7 +92,7 @@ export class ExchangeRateSchedulerService {
 
       for (const currency of currencies) {
         try {
-          await this.exchangeRateService.getExchangeRate(currency, tomorrowStr);
+          await this.exchangeRateService.getHistoricalRate(currency, tomorrow, 'A');
           prefetchCount++;
         } catch (error) {
           // Expected to fail if rates aren't published yet
@@ -120,8 +120,7 @@ export class ExchangeRateSchedulerService {
   async healthCheck() {
     try {
       // Try to fetch EUR rate for today to verify API connectivity
-      const today = new Date().toISOString().split('T')[0];
-      await this.exchangeRateService.getExchangeRate('EUR', today);
+      await this.exchangeRateService.getCurrentRate('EUR', 'A');
       this.logger.debug('Exchange rate service health check: OK');
     } catch (error) {
       this.logger.warn('Exchange rate service health check failed', error.message);
@@ -149,12 +148,12 @@ export class ExchangeRateSchedulerService {
 
     for (const currency of currenciesToUpdate) {
       try {
-        const rate = await this.exchangeRateService.getExchangeRate(currency, today);
+        const rate = await this.exchangeRateService.getCurrentRate(currency, 'A');
         results.success++;
         results.details.push({
           currency,
           status: 'success',
-          message: `Rate: ${rate}`,
+          message: `Rate: ${Number(rate.midRate)}`,
         });
       } catch (error) {
         results.errors++;

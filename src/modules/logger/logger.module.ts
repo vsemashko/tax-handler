@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as winston from 'winston';
-import * as DailyRotateFile from 'winston-daily-rotate-file';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import { LoggerService } from './logger.service';
 
 @Module({

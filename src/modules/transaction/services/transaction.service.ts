@@ -49,9 +49,9 @@ export class TransactionService {
     // Calculate VAT
     const vatCalculation = this.vatCalculatorService.calculate({
       amount: dto.amountType === 'gross' ? dto.amount : plnAmount,
-      amountType: dto.amountType || 'net',
+      amountType: (dto.amountType || 'net') as 'net' | 'gross',
       transactionType: dto.transactionType as any,
-      vatRateType: dto.vatRateType,
+      vatRateType: dto.vatRateType as any,
       isEuTransaction: counterparty?.isEuEntity || false,
       counterpartyCountry: counterparty?.country || 'PL',
       counterpartyVatRegistered: counterparty?.isVatRegistered ?? true,
@@ -195,7 +195,7 @@ export class TransactionService {
         amount: plnAmount,
         amountType: 'net',
         transactionType: (dto.transactionType || transaction.transactionType) as any,
-        vatRateType: dto.vatRateType,
+        vatRateType: dto.vatRateType as any,
         isEuTransaction: counterparty?.isEuEntity || false,
         counterpartyCountry: counterparty?.country || 'PL',
         counterpartyVatRegistered: counterparty?.isVatRegistered ?? true,

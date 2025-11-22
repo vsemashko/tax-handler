@@ -190,7 +190,8 @@ export class VatCalculatorService {
     let totalGross = 0;
 
     for (const item of items) {
-      const vatRate = this.VAT_RATES[item.vatRateType] || this.VAT_RATES.standard;
+      const rateType = item.vatRateType as keyof typeof this.VAT_RATES;
+      const vatRate = this.VAT_RATES[rateType] || this.VAT_RATES.standard;
       const vatAmount = this.calculateVatFromNet(item.amount, vatRate);
       const grossAmount = item.amount + vatAmount;
 
