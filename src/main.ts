@@ -1,10 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { AppModule } from './app.module';
+import { LoggerService } from './modules/logger/logger.service';
+import { LoggingInterceptor } from './modules/logger/interceptors/logging.interceptor';
+import { AllExceptionsFilter } from './modules/logger/filters/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+
+  // Use Winston logger globally
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   // Global prefix
   const apiPrefix = process.env.API_PREFIX || 'api/v1';
@@ -21,6 +30,13 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Global logging interceptor
+  const loggerService = app.get(LoggerService);
+  app.useGlobalInterceptors(new LoggingInterceptor(loggerService));
+
+  // Global exception filter
+  app.useGlobalFilters(new AllExceptionsFilter(loggerService));
 
   // CORS
   if (process.env.CORS_ENABLED === 'true') {

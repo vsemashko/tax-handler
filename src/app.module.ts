@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LoggerModule } from './modules/logger/logger.module';
 import { CacheModule } from './modules/cache/cache.module';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { HealthModule } from './modules/health/health.module';
@@ -22,6 +23,9 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 
     // Scheduler
     ScheduleModule.forRoot(),
+
+    // Logger
+    LoggerModule,
 
     // Cache
     CacheModule,
