@@ -8,6 +8,7 @@ import { TransactionModule } from './modules/transaction/transaction.module';
 import { WhiteListModule } from './modules/white-list/white-list.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { InvoiceModule } from './modules/invoice/invoice.module';
     WhiteListModule,
     ReportingModule,
     InvoiceModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
