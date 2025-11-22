@@ -7,6 +7,7 @@ import { CounterpartyModule } from './modules/counterparty/counterparty.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
 import { WhiteListModule } from './modules/white-list/white-list.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
+import { InvoiceModule } from './modules/invoice/invoice.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ReportingModule } from './modules/reporting/reporting.module';
     TransactionModule,
     WhiteListModule,
     ReportingModule,
+    InvoiceModule,
   ],
 })
 export class AppModule {}
