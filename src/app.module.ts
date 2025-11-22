@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule } from './modules/cache/cache.module';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { HealthModule } from './modules/health/health.module';
 import { CounterpartyModule } from './modules/counterparty/counterparty.module';
@@ -21,6 +22,9 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 
     // Scheduler
     ScheduleModule.forRoot(),
+
+    // Cache
+    CacheModule,
 
     // Database
     TypeOrmModule.forRootAsync({
