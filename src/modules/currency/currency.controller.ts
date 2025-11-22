@@ -19,6 +19,7 @@ import {
 import { ExchangeRateService } from './services/exchange-rate.service';
 import { CurrencyService } from './services/currency.service';
 import { NbpApiService } from './services/nbp-api.service';
+import { ExchangeRateSchedulerService } from './services/exchange-rate-scheduler.service';
 import {
   GetCurrentRateDto,
   GetHistoricalRateDto,
@@ -44,6 +45,7 @@ export class CurrencyController {
     private readonly exchangeRateService: ExchangeRateService,
     private readonly currencyService: CurrencyService,
     private readonly nbpApiService: NbpApiService,
+    private readonly schedulerService: ExchangeRateSchedulerService,
   ) {}
 
   @Get('current/:currency')
@@ -246,6 +248,45 @@ export class CurrencyController {
       cache_status: 'healthy',
       database_status: 'healthy',
     };
+  }
+
+  @Post('update/manual')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Manually trigger exchange rate update for specified currencies' })
+  @ApiQuery({
+    name: 'currencies',
+    required: false,
+    description: 'Comma-separated currency codes (e.g., USD,EUR,GBP)',
+    example: 'USD,EUR,GBP',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Manual update completed',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'number', example: 3 },
+        errors: { type: 'number', example: 0 },
+        details: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              currency: { type: 'string', example: 'USD' },
+              status: { type: 'string', enum: ['success', 'error'] },
+              message: { type: 'string', example: 'Rate: 4.1234' },
+            },
+          },
+        },
+      },
+    },
+  })
+  async manualUpdate(@Query('currencies') currenciesParam?: string) {
+    const currencies = currenciesParam
+      ? currenciesParam.split(',').map(c => c.trim().toUpperCase())
+      : undefined;
+
+    return this.schedulerService.manualUpdate(currencies);
   }
 
   /**

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { HealthModule } from './modules/health/health.module';
 import { CounterpartyModule } from './modules/counterparty/counterparty.module';
@@ -17,6 +18,9 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Scheduler
+    ScheduleModule.forRoot(),
 
     // Database
     TypeOrmModule.forRootAsync({
